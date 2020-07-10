@@ -66,3 +66,112 @@ Se preferir por fazer isso via SQL direto (na aba SQL, do phpMyAdmin)
 ```sql
 CREATE DATABASE wda_crud;
 ```
+
+## Passo 2: Crie o arquivo de configuração do sistema
+
+Agora, vamos criar um arquivo de configuração, que vai guardar todos os dados que serão utilizados em todos os *scripts* PHP do sistema.
+Crie um arquivo chamado "**config.php**, na pasta principal e coloque o código a seguir:
+
+~~~php
+<?php
+
+/** O nome do banco */
+define('DB_NAME', 'wda_crud');
+
+/** Usuario do banco */
+define('DB_USER','root');
+
+/** senha do banco */
+define('DB_PASSWORD', '');
+
+/** nome do host */
+define('DB_HOST', 'localhost');
+
+/** caminho absoluto para a pasta do sistema */
+if(!defined('ABSPATH'))
+    define('ABSPATH', dirname(__FILE__).'/');
+
+/** CAMINHO NO SERVER  */
+if(!defined('BASEURL'))
+    define('BASEURL', '/CRUD-PHP-BOOTSTRAP/');
+
+/** caminho do arquivo de banco de dados */
+if(!defined('DBAPI'))
+    define('DBAPI', ABSPATH.'inc/database.php');
+?>
+~~~
+Este arquivo de configurações é baseado no *wp-config* do Wordpress.
+Os quatro primeiros itens são as contantes que vão guardar as credenciais para acessar o banco de dados.
+
+- o *DB_NAME* define o nome do seu banco de dados;
+- o *DB_USER* é o usuário para acessar o banco de dados;
+- o *DB_PASSWORD* é a senha deste usuário (no XAMPP, este usuário *root* não tem senha);
+- e o *DB_HOST* é o endereço do servidor do banco de dados;
+
+Você deve modificar esses valores de acordo com o seu ambiente de desenvolvimento, ou de produção.
+Além dessas constantes, temos mais duas outras que são muito importantes:
+O **ABSPATH**, define o caminho absoluto da pasta deste *webapp* no sistema de arquivos. Ela vai ser usada para chamar os outros arquivos e templates via PHP (usando o *include_once*), já que ela guarda o caminho físico da pasta.
+
+E o **BASEURL**, define o caminho deste *webapp* no servidor web. Esse valor deve ser igual ao nome da pasta que você criou no começo do projeto. Ela será usada para montar os links da aplicação, já que ela aguarda a *URL* inicial.
+
+## Passo 3: Implemente o *script* de Conexão com o Banco de Dados
+
+Vamos criar um arquivo que vai reunir todas as funções de acesso ao banco de dados. Assim, podemos reaproveitar código nas outras partes do CRUD.
+
+Crie um arquivo chamado *database.php* na pasta **inc** do seu projeto e coloque o código a seguir:
+
+~~~php
+<?php
+
+mysqli_report(MYSQLI_REPORT_STRICT);
+
+function open_database() {
+    try {
+        $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+        return $conn;
+    } catch(Exception $e){
+        echo $e -> getMessage();
+        return null;
+    }
+}
+
+function close_database($conn){
+    try {
+        mysqli_close($conn);
+    } catch (Exception $e) {
+        echo $e -> getMessage();
+    }
+}
+~~~
+
+Este é um arquivo de funções do banco de dados. Tudo o que for relativo ao BD estará nele.
+
+### Entendendo o código
+
+Em *mysqli_report()* configuramos o MySQL para avisar sobre erros graves. Em seguida, temos duas funções.
+A primeira funcão ***open_database()*** -- abre a conexão com a base de dados e retorna a conexão realizada, se der tudo certo. Se houver algum erro, a função dispara uma exceção, que pode ser exibida ao usuário.
+
+Já a segunda função ***close_database()*** -- fecha a conexão que for passada. Se houver algum erro, a função dispara uma exceção também.
+
+## Passo 4: Testar a Conexão
+
+Agora, vamos verificar se o banco de dados está conectado ao CRUD.
+
+Crie um arquivo chamado **index.php**, na pasta principal e coloque o código a seguir:
+
+~~~php
+<?php require_once 'config.php';?>
+<?php require_once DBAPI; ?>
+
+<?php
+
+$db = open_database();
+if ($db) {
+    echo '<h1>Banco de Dados conectado</h1>';
+} else {
+    echo'<h1>ERRO: Não foi possível conectar</h1>';
+}
+
+?>
+~~~
+
