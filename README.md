@@ -20,3 +20,49 @@ A estrutura do seu projeto deve estar assim:
     - fonts
     - inc
     - js
+
+** Ao longo do tutorial será criado mais arquivos e pastas.
+
+## Passo 1: Crie o Banco de Dados e a Tabela de clientes
+
+Para esse tutorial vamos criar um banco de dados simples, com uma tabela de clientes apenas.
+O mapeamento das colunas da tebala de clientes ficou assim:
+
+Clientes (codigo, nome, cpf/cnpj, data de nascimento,
+          endereço, bairro, cep, cidade, estado,
+          telefone, celular, inscrição estadual,
+          data de cadastro, data de atualização)
+
+Uma boa prática, é traduzir os nomes de tabelas e os campos para o inglês, e a partir dai criar seu banco de dados. Isso facilita na hora de escrever as consultas, e na hora de escrever o código do sistema.
+
+Convertendo a tabela em SQL, fica assim:
+
+~~~sql
+CREATE TABLE customers (
+    id int(11) NOT NULL,
+    name varchar(255) NOT NULL,
+    cpf_cnpj varchar(14) NOT NULL,
+    birthdate date NOT NULL,
+    address varchar(255) NOT NULL,
+    hood varchar(100) NOT NULL,
+    zip_code int(8) NOT NULL,
+    city varchar(100) NOT NULL,
+    state varchar(100) NOT NULL,
+    phone int(13) NOT NULL,
+    mobile int(13) NOT NULL,
+    ie int(11) NOT NULL,
+    created datetime NOT NULL,
+    modified datetime NOT NULL
+);
+ALTER TABLE customers
+    add PRIMARY KEY(id)
+ALTER TABLE customers
+    modify id int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENTE=1;
+~~~
+
+Em seguida, abra o phpMyAdmin do Xampp e crie um banco de dados. Eu utilizei o nome: *wda_crud*
+Se preferir por fazer isso via SQL direto (na aba SQL, do phpMyAdmin)
+
+```sql
+CREATE DATABASE wda_crud;
+```
