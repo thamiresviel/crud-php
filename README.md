@@ -359,6 +359,7 @@ Altere agora o arquivo *index.php* na pasta principal do projeto.E coloque essa 
 
 As primeiras linhas fazem a inclusão do arquivo de configuração e da camada de banco de dados.
 O seguinte comando `<?php include(HEADER_TEMPLATE); ?>`é quem faz a importação do template de *header* para a página e, traz toda aquela marcação em HTML. Assim, você não precisa escrever o topo da página várias vezes.
+
 A seguir começa a página em si. Coloquei titulo simples, e um grid que vai manter os botões do *dashboard*. Esses botões usam o componente do *Bootstrap* e o icone vem do *FontAwesome*.
 Por último, usamos o comando para importar o template *footer* da página: `<?php include(FOOTER_TEMPLATE);?>`
 
@@ -375,4 +376,50 @@ Até aqui, seu projeto deve estar assim:
     - config.php
     - index.php
 
+## Passo 9: Crie o Módulo e as Funções
 
+Para começar crie uma pasta chamada ***'customers'***.
+
+Essa pasta será o nosso módulo de clientes e ela terá todas as funcionalidades relacionadas a este *model* ou entidade.
+
+Dentro da pasta, crie um arquivo chamado *function.php*. Esse arquivo terá todas as funções das telas de cadasto de clientes. O código desse arquivo fica assim, por enquanto:
+
+~~~php
+<?php
+
+require_once('../config.php');
+require_once(DBAPI);
+
+$customers = null;
+$customer = null;
+
+/**
+ * Listagem de clientes
+ */
+
+ function index(){
+     global $customers;
+     $customers = find_all('customers');
+ }
+ ~~~
+
+ As primeiras linhas importam o arquivo de configurações e da camada de acesso ao bando de dados.
+
+ Depois, criamos variaveis globais, para serem usadas entre as funções, e que vão guardar os registros que estiverem sendo usados.
+ 
+ - A variável *$customers*, irá guardar um conjunto de registros de clientes.
+ - E a variável *$customer* guardará u único cliente, para os casos de inserção e atualização (*CREATE E UPDATE*)
+
+ ** Observe a diferença entre plural e singular nos nomes das variáveis. Em web, você usará muito isso: **plural** para vários e **singular** para um único item.
+
+ A função *index()* é a função que será chamada na tela principal de clientes e ela fará a consulta pelos registros no banco de dados e, depois, colocará tudo na variável *&customers*, para que possamos exibir.
+
+ Observe que tem uma função *find_all()* sendo usada, é ela que traz os dados. Mas, essa função não existe ainda. Precisamos implementar essa função no arquivo *database.php*.
+
+ ## Passo 10: Implementar a Consulta no Banco de Dados
+
+ Agora, vamos implesmentar as funções de consulta ao banco de dados. Vamos tentar deixar o mais genérico possível.
+ 
+ Abra o arquivo ***database.php***, que está na pasta **inc** do seu projeto. Crie a função a seguir:
+
+ 
