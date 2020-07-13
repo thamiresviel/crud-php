@@ -422,4 +422,155 @@ $customer = null;
  
  Abra o arquivo ***database.php***, que está na pasta **inc** do seu projeto. Crie a função a seguir:
 
- 
+ ~~~php
+ <?php
+ /** 
+ * Pesquisa um registro pelo ID em uma tabela
+ */
+
+ function find($table = null, $id = null){
+     $databse = open_database();
+     $found = null;
+
+     try {
+         if($id){
+             $sql = "SELECT * FROM" . $table . "WHERE id" . $id;
+             $result = $database->query($sql);
+
+             if($result->num_rows > 0){
+                 $found = $result->fetch_assoc();
+             }
+         } else {
+             $sql = "SELECT * FROM" . $table;
+             $result = $database->query($sql);
+
+             if($result->num_rows>0){
+                 $found = $result->fetch_all(MYSQLI_ASSOC);
+             }
+         }
+     } catch(Exception $e) {
+         $_SESSION['message'] = $e->getMessage();
+         $_SESSION['type'] = 'danger';
+     }
+     close_database($database);
+     return $found;
+ }
+ ?>
+ ~~~
+
+ Essa função *find* faz uma busca em uma determinada tabela.
+
+ Se for passado algum *id*, nos parâmetros, a pesquisa será feita por esse *id*, que é a chave primária da tabela (como definimos no começo). Se não for passado o *id*, a consulta retornará todos os registros da tabela.
+
+ Nos dois casos, a consulta retornará dados associativos (usando o *fetch_assoc* e *MYSQLI_ASSOC*), ou seja, são *arrays*  com o nome da coluna e o valor dela.
+
+ Agora, crie também a seguinte função:
+
+ ~~~php
+ <?php
+ /**
+  * Pesquisa todos os registros de uma tabela
+  */
+  function find_all($table){
+      return find($table);
+  }
+  ?>
+  ~~~
+
+  Essa função é só um *alias* (leia-se "ALÁIAS") para a função *find*, ou seja, uma outra forma mais prática de chamar a função sem precisar do parâmetro.
+
+  A função *find_all* retorna todos os registros de uma tabela.
+
+  ## Passo 11: Crie a listagem dos registros
+
+  Voltando na pasta **Customers**, crie um arquivo chamado *index.php*.
+
+  Esse arquivo será a listagem dos registros, e também será a página principal do módulo de clientes.
+
+  Implemente a marcação abaixo, nesse arquivo:
+
+~~~php
+<?php
+    require_once('functions.php');
+    index();
+?>
+
+<?php include(HEADER_TEMPLATE); ?>
+
+<header>
+	<div class="row">
+		<div class="col-sm-6">
+			<h2>Clientes</h2>
+		</div>
+		<div class="col-sm-6 text-right h2">
+	    	<a class="btn btn-primary" href="add.php"><i class="fa fa-plus"></i> Novo Cliente</a>
+	    	<a class="btn btn-default" href="index.php"><i class="fa fa-refresh"></i> Atualizar</a>
+	    </div>
+	</div>
+</header>
+
+<?php if (!empty($_SESSION['message'])) : ?>
+	<div class="alert alert-<?php echo $_SESSION['type']; ?> alert-dismissible" role="alert">
+		<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		<?php echo $_SESSION['message']; ?>
+	</div>
+	<?php clear_messages(); ?>
+<?php endif; ?>
+
+<hr>
+
+<table class="table table-hover">
+<thead>
+	<tr>
+		<th>ID</th>
+		<th width="30%">Nome</th>
+		<th>CPF/CNPJ</th>
+		<th>Telefone</th>
+		<th>Atualizado em</th>
+		<th>Opções</th>
+	</tr>
+</thead>
+<tbody>
+<?php if ($customers) : ?>
+<?php foreach ($customers as $customer) : ?>
+	<tr>
+		<td><?php echo $customer['id']; ?></td>
+		<td><?php echo $customer['name']; ?></td>
+		<td><?php echo $customer['cpf_cnpj']; ?></td>
+		<td>00 0000-0000</td>
+		<td><?php echo $customer['modified']; ?></td>
+		<td class="actions text-right">
+			<a href="view.php?id=<?php echo $customer['id']; ?>" class="btn btn-sm btn-success"><i class="fa fa-eye"></i> Visualizar</a>
+			<a href="edit.php?id=<?php echo $customer['id']; ?>" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i> Editar</a>
+			<a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#delete-modal" data-customer="<?php echo $customer['id']; ?>">
+				<i class="fa fa-trash"></i> Excluir
+			</a>
+		</td>
+	</tr>
+<?php endforeach; ?>
+<?php else : ?>
+	<tr>
+		<td colspan="6">Nenhum registro encontrado.</td>
+	</tr>
+<?php endif; ?>
+</tbody>
+</table>
+
+<?php include(FOOTER_TEMPLATE); ?>
+~~~
+
+### Entendendo o código
+
+As primeiras linhas fazem a ligação dessa página com o módulo de clientes (pelo arquivo *functions.php*) e chama função *index*, que é o backend desta página.
+
+Depois, um *include* para fazer o template de *header* da página, com todos os CSS's e metatags necessários. Assim, não precisamos reescrever essa parte.
+
+A seguir começa a marcação da listagem, apenas com um topo simples e algumas opções.
+
+## 12: Adicione registros via SQL
+
+Para ver essa tela funcionando, enquanto não temos as telas de inserção, você pode criar registros na tabela *customers* via SQL, usando o *PHPMyAdmin*, por exemplo
+
+~~~sql
+INSERT INTO `customers` (`id`, `name`, `cpf_cnpj`, `birthdate`, `address`, 	`hood`, `zip_code`, `city`, `state`, `phone`, `mobile`, `ie`, `created`, `modified`) 	VALUES ('0', 'Fulano de Tal', '123.456.789-00', '1989-01-01', 'Rua da Web, 123', 	'Internet', '1234568', 'Teste', 'Teste', '5555555', '55555555', '123456', 	'2016-05-24 00:00:00', '2016-05-24 00:00:00');
+~~~
