@@ -887,3 +887,218 @@ No arquivo *database.php*, implemente a função que faz a atualização de um r
 
 ## Passo 18: Crie a função de Visualização
 
+Dentro do arquivo *functions.php*, na pasta *customers*, implemente a função que carrega os dados do cliente.
+
+~~~php
+/** Visualização de um Cliente */
+
+function view($id = null) {
+    global $customer;
+    $customer = find('customers', $id);
+}
+~~~
+
+Essa função faz a busca na tabela clientes pelo ID que foi passado pela requisição. O resultado é guardado na variavel `$customer`, que será acessada na tela de visualização.
+
+## Passo 19: Crie a tela de visualização
+
+Na pasta *customers*, crie um arquivo chamado *views.php*. Esse arquivo será a visualização em detalhes do registro, ou seja, *detail view* do nosso CRUD.
+
+Implemente a marcação nesse arquivo:
+
+~~~php
+<?php  
+    require_once('functions.php');
+?>
+
+<?php include(HEADER_TEMPLATE); ?>
+
+<h2>Cliente <?php echo $customer['id'];?></h2>
+<hr/>
+
+<?php
+    if(!empty($_SESSION['message'])) :
+?>
+    <div class="alert alert-<?php echo $_SESSION['type'];?>">
+        <?php echo $_SESSION['message']; ?>
+    </div>
+    <?php endif; ?>
+
+<dl class="dl-horizontal">
+        <dt>Nome/Razão Social</dt>
+        <dd><?php echo $customer['name'];?></dd>
+
+        <dt>CPF/CNPJ</dt>
+        <dd><?php echo $customer['cpf_cnpj'];?></dd>
+
+        <dt>Data de Nascimento</dt>
+        <dd><?php echo $customer['birthdate'];?></dd>
+</dl>
+
+<dl class="dl-horizontal">
+        <dt>Endereço</dt>
+        <dd><?php echo $customer['address'];?></dd>
+
+        <dd>Bairro</dd>
+        <dd><?php echo $customer['hood'];?></dd>
+
+        <dt>CEP</dt>
+        <dd><?php echo $customer['zip_code'];?></dd>
+
+        <dt>Data de cadastro</dt>
+        <dd><?php echo $customer['created'];?></dd>
+</dl>
+
+<dl class="dl-horizontal">
+    <dt>Cidade:</dt>
+    <dd><?php echo $customer['city']; ?></dd>	
+	
+    <dt>Telefone:</dt>
+    <dd><?php echo $customer['phone']; ?></dd>	
+	
+    <dt>Celular:</dt>
+    <dd><?php echo $customer['mobile']; ?></dd>	
+	
+    <dt>UF:</dt>
+    <dd><?php echo $customer['state']; ?></dd>	
+	
+    <dt>Inscrição Estadual:</dt>
+    <dd><?php echo $customer['ie']; ?></dd>
+</dl>
+
+<div id="action" class="row">
+        <div class="col-md-12">
+            <a href="edit.php<?php echo $customer['id'];?>" class="btn btn-primary">Editar</a>
+            <a href="index.php" class="btn btn-secondary">Voltar</a>
+        </div>
+</div>
+
+<?php include(FOOTER_TEMPLATE);?>
+~~~
+
+## Passo 20: Crie a função de exclusão
+
+Na pasta *customers*, implesmente em *functions.php* a função excluir:
+
+~~~php
+/** Exclusão de um Cliente */
+
+function delete($id = null ){
+    global $customer;
+    $customer = remove('customers', $id);
+
+    header('location: index.php');
+}
+~~~
+
+## Passo 21: Crie o Modal de Confirmação
+
+Agora, criaremos o modal que irá aparecer quando o usuário apertar o botão de excluir.
+
+Crie um arquivo chamado *modal.php*, dentro da pasta *customers* e adicione essa marcação:
+
+~~~html
+<!-- Modal Delete -->
+<div class="modal fade" id="delete-modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dimiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="modalLabel">Excluir item</h4>
+            </div>
+            <div class="modal-body">
+                Deseja realmente excluir esse item?
+            </div>
+            <div class="modal-footer">
+                <a id="confirm" class="btn btn-primary" href="#"></a>
+                <a id="cancel" class="btn btn-secondary" data-dismiss="modal">N&atilde;0</a>
+            </div>
+        </div>
+    </div>
+</div><!--modal-->
+~~~
+
+## Passo 22: Inclua o Modal na Listagem (importante)
+
+Faça a importação do arquivo `modal.php` no arquivo `index.php`. Coloque antes do template footer.
+
+~~~php
+
+//index.php
+<?php include('modal.php'). ?>
+
+~~~
+
+## Passo 23: Implemente a chamada JavaScript para excluir:
+
+Na pasta /js do seu projeto, deve ter um arquivo chamado *main.js*. Se não tiver, crie.
+Nesse arquivo, vamos implementar o evento que passa os dados para o modal e chama a função de exclusão.
+
+~~~javascript
+/**
+ * Passa os dados do cliente para o modal, e atualiza o link para exclusão
+ */
+
+ $('#delete-modal').on('show.bs.modal', function(event){
+     var button =$(event.relatedTarget);
+     var id = button.data('customer');
+
+     var modal =$(this);
+     modal.find('.modal-title').text('Excluir Cliente #'+id);
+     modal.find('#confirm').attr('href', 'delete.php?id='.id);
+ })
+ ~~~
+
+## Passo 24: Crie a página de exclusão
+
+Na pasta *customer*, crie um arquivo chamado delete.php.
+Esse arquivo vai receber a chamada do *JavaScript* junto do ID do cliente e executará a exclusão.
+
+Implemente a marcação nesse arquivo:
+
+~~~php
+<?php
+    require_once('functions.php');
+
+    if(isset($_GET['id'])){
+        delete($_GET['id']);
+    } else {
+        die("ERRO: ID NÃO DEFINIDO");
+    }
+?>
+~~~
+
+## Passo 25: Implementar o SQL de Exclusão
+
+Para finalizar, falta o comando de exclusão no banco de dados
+No arquivo inc/database.php, implemente a função remove:
+
+~~~php
+    /**
+     * Remove uma linha de uma tabela pelo ID do registro
+     */
+
+     function remove($table = null, $id = null){
+         $database = open_database();
+
+         try {
+             if($id){
+                 $sql = "DELETE FROM" .$table . "WHERE id" . $id;
+                 $result = $database->query($sql);
+
+                 if($result = $database ->query($sql)){
+                     $_SESSION['message'] = "Registro Removido com Sucesso";
+                     $_SESSION['type'] = 'sucess';
+                 }
+             }
+         } catch (Exception $e) {
+             $_SESSION['message'] = $e ->GetMessage();
+             $_SESSION['type'] = 'danger';
+         }
+         close_database($database);
+     }
+~~~
+
+Existem várias melhorias que você pode fazer nesse código. Este exemplo de CRUD foi feito como uma espécie de simulação de arquitetura em camadas, como o MVC, para você poder ver onde cada código se aplica.
