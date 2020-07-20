@@ -378,199 +378,512 @@ Até aqui, seu projeto deve estar assim:
 
 ## Passo 9: Crie o Módulo e as Funções
 
-Para começar crie uma pasta chamada ***'customers'***.
+Para começar, crie uma pasta chamada *"customers"*.
 
-Essa pasta será o nosso módulo de clientes e ela terá todas as funcionalidades relacionadas a este *model* ou entidade.
+Esta pasta será o módulo de clientes, e ela terá todas as funcionalidades relacionadas a este *model*, ou entidade.
 
-Dentro da pasta, crie um arquivo chamado *function.php*. Esse arquivo terá todas as funções das telas de cadasto de clientes. O código desse arquivo fica assim, por enquanto:
+Dentro da pasta, crie um arquivo chamado "*functions.php"*. Esse arquivo terá todas as funções das telas de cadastro de clientes. O código desse arquivo fica assim:
 
 ~~~php
 <?php
+    require_once('../config.php');
+    require_once(DBAPI);
 
-require_once('../config.php');
-require_once(DBAPI);
+    $customers = null;
+    $customer = null;
 
-$customers = null;
-$customer = null;
+    /** Listagem de clientes */
+    function index(){
+        global $customers;
+        $customers = find_all('customers');
+    }
+~~~
 
-/**
- * Listagem de clientes
- */
+### Entendendo o código
 
- function index(){
-     global $customers;
-     $customers = find_all('customers');
- }
- ~~~
+As primeiras linhas fazem a importação do arquivo de configurações e da camada de acesso a dados (DBAPI).
+Depois eu criei duas variáveis globais, para serem usadas entre as funções, e que vão guardar os registros que estiverem sendo usados.
 
- As primeiras linhas importam o arquivo de configurações e da camada de acesso ao bando de dados.
+- a variável $customers, irá guardar um conjunto de registros de clientes.
+- e a variável $customer guardará um único cliente, para os casos de inserção e atualização (*CREATE e UPDATE*).
 
- Depois, criamos variaveis globais, para serem usadas entre as funções, e que vão guardar os registros que estiverem sendo usados.
- 
- - A variável *$customers*, irá guardar um conjunto de registros de clientes.
- - E a variável *$customer* guardará u único cliente, para os casos de inserção e atualização (*CREATE E UPDATE*)
+A função *index()* é a função que será chamada na tela principal de clientes, e ela fará a consulta pelos registros no banco de dados, e depois colocará tudo na variável $customers, para que possamos exibir.
 
- ** Observe a diferença entre plural e singular nos nomes das variáveis. Em web, você usará muito isso: **plural** para vários e **singular** para um único item.
+Observe que tem uma função *find_all()* sendo usada, é ela que traz os dados. Mas, essa função não existe ainda.
 
- A função *index()* é a função que será chamada na tela principal de clientes e ela fará a consulta pelos registros no banco de dados e, depois, colocará tudo na variável *&customers*, para que possamos exibir.
+## Passo 10: Implemente a Consulta no Banco de Dados
 
- Observe que tem uma função *find_all()* sendo usada, é ela que traz os dados. Mas, essa função não existe ainda. Precisamos implementar essa função no arquivo *database.php*.
+Vamos implesmentar as funções de consulta ao banco de dados.
 
- ## Passo 10: Implementar a Consulta no Banco de Dados
-
- Agora, vamos implesmentar as funções de consulta ao banco de dados. Vamos tentar deixar o mais genérico possível.
- 
- Abra o arquivo ***database.php***, que está na pasta **inc** do seu projeto. Crie a função a seguir:
-
- ~~~php
- <?php
- /** 
- * Pesquisa um registro pelo ID em uma tabela
- */
-
- function find($table = null, $id = null){
-     $databse = open_database();
-     $found = null;
-
-     try {
-         if($id){
-             $sql = "SELECT * FROM" . $table . "WHERE id" . $id;
-             $result = $database->query($sql);
-
-             if($result->num_rows > 0){
-                 $found = $result->fetch_assoc();
-             }
-         } else {
-             $sql = "SELECT * FROM" . $table;
-             $result = $database->query($sql);
-
-             if($result->num_rows>0){
-                 $found = $result->fetch_all(MYSQLI_ASSOC);
-             }
-         }
-     } catch(Exception $e) {
-         $_SESSION['message'] = $e->getMessage();
-         $_SESSION['type'] = 'danger';
-     }
-     close_database($database);
-     return $found;
- }
- ?>
- ~~~
-
- Essa função *find* faz uma busca em uma determinada tabela.
-
- Se for passado algum *id*, nos parâmetros, a pesquisa será feita por esse *id*, que é a chave primária da tabela (como definimos no começo). Se não for passado o *id*, a consulta retornará todos os registros da tabela.
-
- Nos dois casos, a consulta retornará dados associativos (usando o *fetch_assoc* e *MYSQLI_ASSOC*), ou seja, são *arrays*  com o nome da coluna e o valor dela.
-
- Agora, crie também a seguinte função:
-
- ~~~php
- <?php
- /**
-  * Pesquisa todos os registros de uma tabela
-  */
-  function find_all($table){
-      return find($table);
-  }
-  ?>
-  ~~~
-
-  Essa função é só um *alias* (leia-se "ALÁIAS") para a função *find*, ou seja, uma outra forma mais prática de chamar a função sem precisar do parâmetro.
-
-  A função *find_all* retorna todos os registros de uma tabela.
-
-  ## Passo 11: Crie a listagem dos registros
-
-  Voltando na pasta **Customers**, crie um arquivo chamado *index.php*.
-
-  Esse arquivo será a listagem dos registros, e também será a página principal do módulo de clientes.
-
-  Implemente a marcação abaixo, nesse arquivo:
+Abra o arquivo *database.php*, que está na pasta **/inc** do seu projeto. Crie a função a seguir:
 
 ~~~php
+/** Pesquisa por ID em uma tabela */
+    
+    function find($table = null, $id = null){
+        
+        $database = open_database();
+        $found = null;
+
+        try {
+            if($id){
+                $sql = "SELECT * FROM" . $table . "WHERE id =" . $id;
+                $result = $database -> query($sql);
+
+                if($result -> num_rows > 0) {
+                    $found = $result -> fetch_assoc();
+                }
+            } else {
+                $sql = "SELECT * FROM" . $table;
+                $result = $database -> query($sql);
+
+                if($result -> num_rows > 0) {
+                    $found = $result -> fetch_all(MYSQLI_ASSOC);
+                }
+            }
+        } catch (Exception $e) {
+            $_SESSION['message'] = $e -> GetMessage();
+            $_SESSION['type'] = 'danger';
+        }
+
+        close_database($database);
+        return $found;
+    }
+~~~
+### Entendendo o código
+
+Essa função *find* faz uma busca em uma determinada tabela.
+
+Se for passado algum *id* a pesquisa será feita por ese *id*, que é a chave primária da tabela.
+
+Se não for passado *id* a consulta retornará todos os registros da tabela.
+
+Nos dois casos, a consulta retornará dados associativos (usando o *fetch_assoc* e *MYSQLI_ASSOC*), ou seja, são *arrays* com o nome da coluna e o valor dela.
+
+Agora crie também a seguinte função
+
+~~~php
+    /** Pesquisa todos os registros de uma tabela */
+
+    function find_all($table) {
+        return find($table);
+    }
+~~~
+### Entendendo o código
+
+Essa função é só um alias (leia-se 'àlais') para a função *find*, ou seja, uma outra forma mais prática de chamar a função sem precisar do parâmetro. A função *find_all* retorna todos os registros de uma tabela.
+
+## Passo 11: Criar a Listagem dos Registros
+
+Voltando na pasta *customers*, crie um arquivo chamado *index.php*.
+
+Esse arquivo será a listagem dos registros, e também será a página do módulo de clientes. Implemente a marcação abaixo, nesse arquivo:
+
+~~~html
 <?php
     require_once('functions.php');
     index();
 ?>
 
 <?php include(HEADER_TEMPLATE); ?>
-
 <header>
-	<div class="row">
-		<div class="col-sm-6">
-			<h2>Clientes</h2>
-		</div>
-		<div class="col-sm-6 text-right h2">
-	    	<a class="btn btn-primary" href="add.php"><i class="fa fa-plus"></i> Novo Cliente</a>
-	    	<a class="btn btn-default" href="index.php"><i class="fa fa-refresh"></i> Atualizar</a>
-	    </div>
-	</div>
+    <div class="row">
+        <div class="col-sm-6">
+            <h2>Clientes</h2>
+        </div>
+        <div class="col-sm-6 text-right h2">
+            <a href="add.php" class="btn btn-primary"><i class="fa fa-plus"></i> Novo Cliente</a>
+            <a href="index.php" class="btn btn-secondary"><i class="fa fa-refresh"></i> Atualizar</a>
+        </div>
+    </div>
 </header>
 
-<?php if (!empty($_SESSION['message'])) : ?>
-	<div class="alert alert-<?php echo $_SESSION['type']; ?> alert-dismissible" role="alert">
-		<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-		<?php echo $_SESSION['message']; ?>
-	</div>
-	<?php clear_messages(); ?>
+<?php if(!empty($_SESSION['message'])) : ?>
+    <div class="alert alert-<?php echo $_SESSION['type']; ?> alert-dismissible" role="alert">
+        <button type="button" class="close" data-dimiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        <?php echo $_SESSION['message']; ?>
+    </div>
+    <?php clear_messages(); ?>
 <?php endif; ?>
 
 <hr>
 
 <table class="table table-hover">
-<thead>
-	<tr>
-		<th>ID</th>
-		<th width="30%">Nome</th>
-		<th>CPF/CNPJ</th>
-		<th>Telefone</th>
-		<th>Atualizado em</th>
-		<th>Opções</th>
-	</tr>
-</thead>
-<tbody>
-<?php if ($customers) : ?>
-<?php foreach ($customers as $customer) : ?>
-	<tr>
-		<td><?php echo $customer['id']; ?></td>
-		<td><?php echo $customer['name']; ?></td>
-		<td><?php echo $customer['cpf_cnpj']; ?></td>
-		<td>00 0000-0000</td>
-		<td><?php echo $customer['modified']; ?></td>
-		<td class="actions text-right">
-			<a href="view.php?id=<?php echo $customer['id']; ?>" class="btn btn-sm btn-success"><i class="fa fa-eye"></i> Visualizar</a>
-			<a href="edit.php?id=<?php echo $customer['id']; ?>" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i> Editar</a>
-			<a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#delete-modal" data-customer="<?php echo $customer['id']; ?>">
-				<i class="fa fa-trash"></i> Excluir
-			</a>
-		</td>
-	</tr>
-<?php endforeach; ?>
-<?php else : ?>
-	<tr>
-		<td colspan="6">Nenhum registro encontrado.</td>
-	</tr>
-<?php endif; ?>
-</tbody>
+    
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th widt="30%">Nome</th>
+            <th>CPF/CNPJ</th>
+            <th>Telefone</th>
+            <th>Atualizado em:</th>
+            <th>Opções</th>
+        </tr>
+    </thead>
+    
+    <tbody>
+        <?php if($customers) : ?>
+        <?php foreach ($customers as $customer) : ?>
+            <tr>
+                <td> <?php echo $customer['id']; ?> </td>
+                <td> <?php echo $customer['name']; ?> </td>
+                <td> <?php echo $customer ['cpf_cnpj']; ?> </td>
+                <td> 00 0000-0000</td>
+                <td> <?php echo $customer['modified']; ?> </td>
+                <td class="actions text-right">
+                <a href="view.php?id=<?php echo $customer['id']; ?>" class="btn btn-sm btn-success"><i class="fa fa-eye"></i> Visualizar</a>
+			    <a href="edit.php?id=<?php echo $customer['id']; ?>" class="btn btn-sm btn-warning"><i class="fa fa-pencil"></i> Editar</a>
+			    <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#delete-modal" data-customer="<?php echo $customer['id']; ?>">
+				<i class="fa fa-trash"></i> Excluir </a>
+                </td>
+            </tr>
+        <?php endforeach;?>
+        <?php else : ?>
+            <tr>
+                <td colspan="6">Nenhum registro encontrado</td>
+            </tr>
+        <?php endif;?>
+   </tbody>
 </table>
 
 <?php include(FOOTER_TEMPLATE); ?>
 ~~~
+## Passo 12: Adicione Registros via SQL
 
-### Entendendo o código
-
-As primeiras linhas fazem a ligação dessa página com o módulo de clientes (pelo arquivo *functions.php*) e chama função *index*, que é o backend desta página.
-
-Depois, um *include* para fazer o template de *header* da página, com todos os CSS's e metatags necessários. Assim, não precisamos reescrever essa parte.
-
-A seguir começa a marcação da listagem, apenas com um topo simples e algumas opções.
-
-## 12: Adicione registros via SQL
-
-Para ver essa tela funcionando, enquanto não temos as telas de inserção, você pode criar registros na tabela *customers* via SQL, usando o *PHPMyAdmin*, por exemplo
+Para ver essa tela funcionando, enquanto não temos a tela de inserção, você pode criar registros na tabela *'customers'* via SQL, usando o *PHPMyAdmin*, por exemplo
 
 ~~~sql
 INSERT INTO `customers` (`id`, `name`, `cpf_cnpj`, `birthdate`, `address`, 	`hood`, `zip_code`, `city`, `state`, `phone`, `mobile`, `ie`, `created`, `modified`) 	VALUES ('0', 'Fulano de Tal', '123.456.789-00', '1989-01-01', 'Rua da Web, 123', 	'Internet', '1234568', 'Teste', 'Teste', '5555555', '55555555', '123456', 	'2016-05-24 00:00:00', '2016-05-24 00:00:00');
 ~~~
+
+Você pode alterar esse SQL para criar mais registros.
+
+A estrutura do projeto deve estar assim:
+
+- crud-php-bootstrap
+    - css
+    - customers
+        - functions.php
+        - index.php
+    - fonts
+    - inc
+        - database.php
+        - footer.php
+        - header.php
+    - js
+    - config.php
+    - index.php
+
+## Passo 13: Crie a função de cadastro
+
+Voltando à pasta *customers*, adicione estas a função de cadastro no arquivo *functions.php*:
+
+~~~php
+/** Cadastro de clientes */
+function add(){
+    if(!empty($_POST['customer'])) {
+        $today = date_create('now', new DateTimeZone('America/Sao_Paulo'));
+        $customer = $_POST['customer'];
+        $customer['modified'] = $customer['created'] = $today -> format('Y/m/d H:i:s');
+        save('customers', $customer);
+        header('location: index.php');
+    }
+}
+~~~
+
+## Passo 14: Crie o Formulário de Cadastro
+
+Agora, crie um arquivo chamado *add.php* na pasta *customers*. Esse arquivo vai ter a marcação do formulário de cadastro do cliente:
+
+~~~html
+<?php
+    require_once('functions.php');
+    add();
+?>
+
+<?php include(HEADER_TEMPLATE); ?>
+
+<h2>Novo Cliente</h2>
+
+<form action="add.php" method="post">
+    <hr/>
+    <div class="row">
+        <div class="form-group col-md-7">
+            <label for="name">Nome/Razão Social</label>
+            <input type="text" class="form-control" name="customer['name']">
+        </div>
+
+        <div class="form-group col-md-3">
+            <label for="campo2">CPF/CNPJ</label>
+            <input type="text" name="customer['cpf_cnpj']" claa="form-control">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Data de Nascimento</label>
+            <input type="text" class="form-control" name="customer['birthdate']">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="form-group col-md-5">
+            <label for="campo1">Endereço</label>
+            <input type="text" class="form-control" name="customer['address']">
+        </div>
+
+        <div class="form-group col-md-3">
+            <label for="campo2">Bairro</label>
+            <input type="text" class="form-control" name="customer['hood']">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">CEP</label>
+            <input type="text" class="form-control" name="customer['zip_code']">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Data de Cadastro</label>
+            <input type="text" class="form-control" name="customer['created']" disable>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="form-group col-md-3">
+            <label for="campo1">Municipio</label>
+            <input type="text" class="form-control" name="customer['city']">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo2">Telefone</label>
+            <input type="text" class="form-control" name="customer['phone']">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Celular</label>
+            <input type="text"  class="form-control" name="customer['mobile']">
+        </div>
+
+        <div class="form-group col-md-1">
+            <label for="campo3">UF</label>
+            <input type="text" class="form-control" name="customer['state']">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Incrição estadual</label>
+            <input type="text" class="form-control" name="customer['ie']">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">UF</label>
+            <input type="text" class="form-control">
+        </div>
+    </div>
+
+    <div class="row" id="actions">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <a href="index.php" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+</form>
+
+<?php include(FOOTER_TEMPLATE);
+~~~
+
+## Passo 14: Crie a Função de Persistência no BD
+
+No arquivo *database.php*, implemente a função que vai inserir um registro no banco de dados:
+
+~~~php
+/** Insere um Registro no BD */
+    function save($table = null, $data = null){
+        $database = open_database();
+        $columns = null;
+        $values = null;
+
+        foreach($data  as $key => $value){
+            $columns .= trim($key, "'") . ",";
+            $values .= "'$value',";
+        }
+
+        /** renove a ultinma virgula */
+        $columns = rtrim($columns, ',');
+        $values = rtrim($values, ',');
+        $sql = "INSERT INTO" . $table . "($columns)" . "VALUES" . "($values);";
+
+        try {
+            $database -> query($sql);
+            $_SESSION['message'] = 'Registro cadastrado com sucesso';
+            $_SESSION['type'] = 'sucess';
+
+        } catch (Exception $e) {
+            $_SESSION['message'] = 'Não foi possível realizar a operação';
+            $_SESSION['type'] = 'danger';
+        }
+
+        close_database($database);
+~~~
+
+## Passo 15: Crie a função de edição/atualização
+
+O primeiro passo é implementar a função *edit()* no módulo de cliente, ou seja, no arquivo *functions.php*.
+
+~~~php
+/** Atualização e edição de cliente */
+
+function edit(){
+    $now = date_create('now', new DateTimeZone('America/Sao_Paulo'));
+
+    if(isset($_GET['id'])) {
+        $id = $_GET['id'];
+
+        if(isset($_POST['customer'])){
+            $customer = $_POST['customer'];
+            $customer['modified'] = $now -> format('Y,m,d H:i:s');
+
+            update('customers', $id, $customer);
+            header('location: index.php');
+        } else {
+            global $customer;
+            $customer = find('customers', $id);
+        }
+    } else {
+        header('location:index.php');
+    }
+}
+~~~
+
+## Passo 16: Implemente o Formulário de Edição
+
+
+Agora, crie um arquivo chamado *edit.php* na pasta *customers*. Esse arquivo vai ter a marcação do formulário de edição do cliente, que é quase igual à cadastro
+
+~~~php
+<?php
+    require_once('functions.php');
+?>
+
+<?php include(HEADER_TEMPLATE); ?>
+
+<h2>Atualizar Cliente</h2>
+
+<form action="edit.php?id=<?php echo $customer['id'] ?>" method="post">
+    <hr/>
+    <div class="row">
+        <div class="form-group col-md-7">
+            <label for="name">Nome/Razão Social</label>
+            <input type="text" class="form-control" name="customer['name']" value="<?php echo $customer['name']; ?>">
+        </div>
+
+        <div class="form-group col-md-3">
+            <label for="campo2">CPF/CNPJ</label>
+            <input type="text" class="form-control" name="customer['cpf_cnpj']" value="<?php echo $customer['cpf_cnpj']; ?>">
+        </div>
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Data de nascimento</label>
+            <input type="text" class="form-control" name="customer['birthdate']" value="<?php echo $customer['birthdate'];?>">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="form-group col-md-5">
+            <label for="campo1">Endereço</label>
+            <input type="text" class="form-control" name="customer['address']" value="<?php echo $customer['address']; ?>">	    
+        </div>	
+    
+        <div class="form-group col-md-3">
+            <label for="campo2">Bairro</label>
+            <input type="text" class="form-control" name="customer['hood']" value="<?php echo $customer['hood']; ?>">
+        </div>	
+    
+        <div class="form-group col-md-2">
+            <label for="campo3">CEP</label>
+            <input type="text" class="form-control" name="customer['zip_code']" value="<?php echo $customer['zip_code']; ?>">	    
+        </div>	
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Data de Cadastro</label>
+            <input type="text" class="form-control" name="customer['created']" disabled value="<?php echo $customer['created']; ?>">	    
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="form-group col-md-3">
+            <label for="campo1">Município</label>
+            <input type="text" class="form-control" name="customer['city']" value="<?php echo $customer['city']; ?>">
+        </div>	
+    
+        <div class="form-group col-md-2">
+            <label for="campo2">Telefone</label>
+            <input type="text" class="form-control" name="customer['phone']" value="<?php echo $customer['phone']; ?>">
+        </div>	
+    
+        <div class="form-group col-md-2">
+            <label for="campo3">Celular</label>
+            <input type="text" class="form-control" name="customer['mobile']" value="<?php echo $customer['mobile']; ?>">
+        </div>	
+
+        <div class="form-group col-md-1">
+            <label for="campo3">UF</label>
+            <input type="text" class="form-control" name="customer['state']" value="<?php echo $customer['state']; ?>">	    
+        </div>	
+
+        <div class="form-group col-md-2">
+            <label for="campo3">Inscrição Estadual</label>
+            <input type="text" class="form-control" name="customer['ie']" value="<?php echo $customer['ie']; ?>">
+        </div>	
+    
+        <div class="form-group col-md-2">
+            <label for="campo3">UF</label>
+            <input type="text" class="form-control">	    
+        </div>	  
+    </div>
+    
+    <div id="actions" class="row">
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="index.php" class="btn btn-default">Cancelar</a>
+        </div>
+    </div>
+</form>	
+
+<?php include(FOOTER_TEMPLATE); ?>
+~~~
+
+## Passo 17: Crie a Função de Atualizar no BD
+
+No arquivo *database.php*, implemente a função que faz a atualização de um registro no bando de dados;
+
+~~~php
+    /** Atualizar um Registro em uma tabela, por ID */
+
+    function update($table = null, $id = 0, $data = null){
+        $database = open_database()
+        $items = null;
+
+        foreach ($data as $key => $value) {
+            $items .= trim($key, "'") . "='$value',";
+        }
+
+        // remove a ultima virgula
+        $items = rtrim($items, ',');
+        $sql = "UPDATE" . $table;
+        $sql .= "SET $items";
+        $sql .= "WHERE id=" . $id . ";";
+
+        try {
+            $database ->query($sql);
+            $_SESSION['message'] = 'Registro Atualizado com sucesso.';
+            $_SESSION['type'] = 'success';
+        } catch (Exception $e) {
+            $_SESSION['message'] = 'Não foi possível realizar a operação';
+            $_SESSION['type'] = 'danger';
+        }
+        close_database($database);
+    }
+~~~
+
+## Passo 18: Crie a função de Visualização
+

@@ -25,4 +25,5 @@ if(!defined('DBAPI'))
     define('DBAPI', ABSPATH.'inc/database.php');
 
 /** Caminhos dos templares header e footer */
-define('HEADER_TEMPLATE', ABSPATH . 'inc/header.php');define('FOOTER_TEMPLATE', ABSPATH . 'inc/footer.php');
+define('HEADER_TEMPLATE', ABSPATH . 'inc/header.php');
+define('FOOTER_TEMPLATE', ABSPATH . 'inc/footer.php');
